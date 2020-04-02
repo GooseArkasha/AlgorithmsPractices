@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Задаем URL странички, с которой будем брать данные
-url = 'https://cbr.ru/currency_base/dynamics/?UniDbQuery.Posted=True&UniDbQuery.mode=1&UniDbQuery.date_req1=&UniDbQuery.date_req2=&UniDbQuery.VAL_NM_RQ=R01090&UniDbQuery.From=28.03.2010&UniDbQuery.To=28.03.2020'
+url = 'https://cbr.ru/currency_base/dynamics/?UniDbQuery.Posted=True&UniDbQuery.mode=1&UniDbQuery.date_req1=&UniDbQuery.date_req2=&UniDbQuery.VAL_NM_RQ=R01090&UniDbQuery.From=01.01.2010&UniDbQuery.To=01.01.2020'
 
 # Делаем запрос по данному URL
 response = requests.get(url)
@@ -41,25 +41,68 @@ else:
 
 
 def show_chart():
-    x = list()
-    y = list()
-    for i, element in enumerate(valCurrency):
-        if i % 365 == 0:
-            x.append(element[0].strftime("%d.%m.%Y"))
-            y.append(float(element[1]))
+    if (len(text1.get()) > 11) & (len(text2.get()) > 11) & (len(text3.get()) > 11):
+        temp = text1.get()
+        first_date = temp[11:21]
+        first_date = datetime.strptime(first_date, "%d.%m.%Y")
 
-    x = np.array(x)
-    y = np.array(y)
+        temp = text2.get()
+        second_date = temp[11:21]
+        second_date = datetime.strptime(second_date, "%d.%m.%Y")
+        
+        if second_date >= first_date:
+            x = list()
+            y = list()
 
-    fig, ax = plt.subplots()
-    ax.bar(x, y)
-    ax.set_title('Динамика курса валюты Белорусский рубль')
-    ax.set_ylabel('Курс')
-    ax.set_xlim(xmin=x[0], xmax=x[-1])
-    plt.xticks(rotation=90)
-    fig.tight_layout()
+            temp = text3.get()
+            step = temp[11:len(temp)]
+            if step == 'День':
+                step = 1
+            elif step == 'Неделя':
+                step = 7
+            elif step == 'Месяц':
+                step = 31
+            else:
+                step = 365
 
-    plt.show()
+            temp_date_index = 0
+            second_date_index = 0
+
+            for i, element in enumerate(valCurrency):
+                if element[0] == first_date:
+                    temp_date_index = i
+                if element[0] == second_date:
+                    second_date_index = i
+
+            while temp_date_index <= second_date_index:
+                if step == 1:
+                    x.append(valCurrency[temp_date_index][0].strftime("%d.%m.%Y"))
+                elif step == 7:
+                    x.append(valCurrency[temp_date_index][0].strftime("%d.%m.%Y"))
+                elif step == 31:
+                    x.append(valCurrency[temp_date_index][0].strftime("%m.%Y"))
+                else:
+                    x.append(valCurrency[temp_date_index][0].strftime("%Y"))
+
+                average_value = 0.0
+                for i in range(0, step):
+                    average_value = average_value + float(valCurrency[i + temp_date_index][1])
+                average_value = average_value / step
+                y.append(average_value)
+
+                temp_date_index = temp_date_index + step
+
+            y = np.array(y)
+
+            fig, ax = plt.subplots()
+            ax.plot(x, y)
+            ax.set_title('Динамика курса валюты Белорусский рубль')
+            ax.set_ylabel('Курс')
+            ax.set_xlim(xmin=x[0], xmax=x[-1])
+            plt.xticks(rotation=90)
+            fig.tight_layout()
+
+            plt.show()
 
 
 # Создаем графику приложения
